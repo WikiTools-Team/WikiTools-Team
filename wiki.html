@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+      }
+
+      .header {
+        background-color: #f2f2f2;
+        padding: 20px;
+        text-align: center;
+      }
+
+      .search-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 30px auto;
+        max-width: 600px;
+      }
+
+      .search-bar {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        border-radius: 5px 0 0 5px;
+        font-size: 16px;
+        outline: none;
+      }
+
+      .search-button {
+        padding: 8px;
+        border: none;
+        border-radius: 0 5px 5px 0;
+        background-color: #4caf50;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      .search-button:hover {
+        background-color: #45a049;
+      }
+
+      .results-container {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .result-item {
+        background-color: #fff;
+        padding: 20px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+      }
+
+      .result-title {
+        font-size: 20px;
+        margin: 0;
+        margin-bottom: 5px;
+        color: #1a0dab;
+      }
+
+      .result-summary {
+        margin: 0;
+        color: #545454;
+      }
+
+      .result-source {
+        margin-top: 10px;
+        color: #888888;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Search All Wiki</h1>
+    </div>
+
+    <div class="search-container">
+      <input
+        type="text"
+        class="search-bar"
+        placeholder="Search all wiki"
+        id="searchInput"
+        onkeydown="handleSearch(event)"
+      />
+      <button class="search-button" onclick="searchWiki()">Search</button>
+    </div>
+
+    <div class="results-container">
+      <div id="resultsList"></div>
+    </div>
+
+    <script>
+      const sources = [
+        {
+          name: "Wikipedia",
+          endpoint: "https://en.wikipedia.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wiktionary",
+          endpoint: "https://en.wiktionary.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikiquote",
+          endpoint: "https://en.wikiquote.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikinews",
+          endpoint: "https://en.wikinews.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikisource",
+          endpoint: "https://en.wikisource.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikibooks",
+          endpoint: "https://en.wikibooks.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikiversity",
+          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikivoyage",
+          endpoint: "https://en.wikivoyage.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikidata",
+          endpoint: "https://www.wikidata.org/api/rest_v1/page/summary/"
+        },
+        {
+          name: "Wikijournal (Wikiversity)",
+          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijournal"
+        },
+        {
+          name: "Wikijunior (Wikiversity)",
+          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijunior"
+        }
+      ];
+
+      function handleSearch(event) {
+        if (event.key === "Enter") {
+          searchWiki();
+        }
+      }
+
+      function searchWiki() {
+        var searchTerm = document.getElementById("searchInput").value;
+        searchTerm = searchTerm.replace(/ /g, "_"); // Replace spaces with underscores
+        var resultsList = document.getElementById("resultsList");
+        resultsList.innerHTML = "";
+
+        sources.forEach(source => {
+          var url = source.endpoint + encodeURIComponent(searchTerm);
+          fetch(url)
+            .then(response => response.json())
+            .then(data => {
+              if (data.title) {
+                var title = data.title;
+                var summary = data.extract;
+                var link = data.content_urls.desktop.page;
+
+                var resultItem = document.createElement("div");
+                resultItem.className = "result-item";
+                resultItem.innerHTML = `
+                  <a class="result-title" href="${link}" target="_blank">${title}</a>
+                  <p class="result-summary">${formatSummary(summary)}</p>
+                  <p class="result-source">Source: ${source.name}</p>
+                `;
+
+                resultsList.appendChild(resultItem);
+              }
+            })
+            .catch(error => {
+              console.error(error);
+            });
+        });
+      }
+
+      function formatSummary(summary) {
+        var maxLength = 250;
+        var formattedSummary = summary;
+
+        if (formattedSummary.length > maxLength) {
+          formattedSummary = formattedSummary.substring(0, maxLength);
+          var lastSpaceIndex = formattedSummary.lastIndexOf(" ");
+          formattedSummary = formattedSummary.substring(0, lastSpaceIndex);
+          formattedSummary += "...";
+        }
+
+        return formattedSummary;
+      }
+    </script>
+  </body>
+</html>
