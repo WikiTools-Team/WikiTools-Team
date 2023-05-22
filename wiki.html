@@ -1,165 +1,218 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
+<head>
+  <style>
+    #image-container {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 9999;
+    }
+
+    #image-container img {
+      width: 100px;
+      height: 100px;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #f2f2f2;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .search-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 30px auto;
+      max-width: 600px;
+    }
+
+    .search-bar {
+      width: 100%;
+      padding: 8px;
+      border: none;
+      border-radius: 5px 0 0 5px;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .search-button {
+      padding: 8px;
+      border: none;
+      border-radius: 0 5px 5px 0;
+      background-color: #4caf50;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .search-button:hover {
+      background-color: #45a049;
+    }
+
+    .results-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .result-item {
+      background-color: #fff;
+      padding: 20px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+    }
+
+    .result-title {
+      font-size: 20px;
+      margin: 0;
+      margin-bottom: 5px;
+      color: #1a0dab;
+      text-decoration: none;
+    }
+
+    .result-summary {
+      margin: 0;
+      color: #545454;
+    }
+
+    .result-source {
+      margin-top: 10px;
+      color: #008000;
+      font-size: 14px;
+    }
+
+    .no-results-container {
+      display: none;
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #f2f2f2;
+      padding: 20px;
+      border-radius: 5px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+
+  <div class="header">
+    <h1>Search All Wiki</h1>
+  </div>
+
+  <div class="search-container">
+    <input
+      type="text"
+      class="search-bar"
+      placeholder="Search all wiki"
+      id="searchInput"
+      onkeydown="handleSearch(event)"
+    />
+    <button class="search-button" onclick="searchWiki()">Search</button>
+  </div>
+
+  <div class="results-container">
+    <div id="resultsList"></div>
+  </div>
+
+  <div class="no-results-container" id="noResultsContainer">
+    <p>No Results Found</p>
+  </div>
+
+  <script>
+    const sources = [
+      {
+        name: "Wikipedia",
+        endpoint: "https://en.wikipedia.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikipedia.org/"
+      },
+      {
+        name: "Wiktionary",
+        endpoint: "https://en.wiktionary.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wiktionary.org/"
+      },
+      {
+        name: "Wikiquote",
+        endpoint: "https://en.wikiquote.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikiquote.org/"
+      },
+      {
+        name: "Wikinews",
+        endpoint: "https://en.wikinews.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikinews.org/"
+      },
+      {
+        name: "Wikisource",
+        endpoint: "https://en.wikisource.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikisource.org/"
+      },
+      {
+        name: "Wikibooks",
+        endpoint: "https://en.wikibooks.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikibooks.org/"
+      },
+      {
+        name: "Wikiversity",
+        endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikiversity.org/"
+      },
+      {
+        name: "Wikivoyage",
+        endpoint: "https://en.wikivoyage.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikivoyage.org/"
+      },
+      {
+        name: "Wikidata",
+        endpoint: "https://www.wikidata.org/api/rest_v1/page/summary/",
+        homepage: "https://www.wikidata.org/"
+      },
+      {
+        name: "Wikijournal (Wikiversity)",
+        endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijournal",
+        homepage: "https://www.wikiversity.org/"
+      },
+      {
+        name: "Wikijunior (Wikiversity)",
+        endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijunior",
+        homepage: "https://www.wikiversity.org/"
+      }
+    ];
+
+    let currentTab = "summary";
+    let currentSearchTerm = "";
+
+    function handleSearch(event) {
+      if (event.key === "Enter") {
+        searchWiki();
+      }
+    }
+
+    function searchWiki() {
+      var searchTerm = document.getElementById("searchInput").value;
+      var resultsList = document.getElementById("resultsList");
+      var noResultsContainer = document.getElementById("noResultsContainer");
+
+      resultsList.innerHTML = "";
+      noResultsContainer.style.display = "none";
+
+      if (searchTerm === currentSearchTerm) {
+        return;
       }
 
-      .header {
-        background-color: #f2f2f2;
-        padding: 20px;
-        text-align: center;
-      }
+      let hasResults = false;
+      currentSearchTerm = searchTerm;
 
-      .search-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 30px auto;
-        max-width: 600px;
-      }
-
-      .search-bar {
-        width: 100%;
-        padding: 8px;
-        border: none;
-        border-radius: 5px 0 0 5px;
-        font-size: 16px;
-        outline: none;
-      }
-
-      .search-button {
-        padding: 8px;
-        border: none;
-        border-radius: 0 5px 5px 0;
-        background-color: #4caf50;
-        color: #fff;
-        font-size: 16px;
-        cursor: pointer;
-      }
-
-      .search-button:hover {
-        background-color: #45a049;
-      }
-
-      .results-container {
-        max-width: 800px;
-        margin: 0 auto;
-      }
-
-      .result-item {
-        background-color: #fff;
-        padding: 20px;
-        margin-bottom: 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 5px;
-      }
-
-      .result-title {
-        font-size: 20px;
-        margin: 0;
-        margin-bottom: 5px;
-        color: #1a0dab;
-      }
-
-      .result-summary {
-        margin: 0;
-        color: #545454;
-      }
-
-      .result-source {
-        margin-top: 10px;
-        color: #888888;
-        font-size: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <h1>Search All Wiki</h1>
-    </div>
-
-    <div class="search-container">
-      <input
-        type="text"
-        class="search-bar"
-        placeholder="Search all wiki"
-        id="searchInput"
-        onkeydown="handleSearch(event)"
-      />
-      <button class="search-button" onclick="searchWiki()">Search</button>
-    </div>
-
-    <div class="results-container">
-      <div id="resultsList"></div>
-    </div>
-
-    <script>
-      const sources = [
-        {
-          name: "Wikipedia",
-          endpoint: "https://en.wikipedia.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wiktionary",
-          endpoint: "https://en.wiktionary.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikiquote",
-          endpoint: "https://en.wikiquote.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikinews",
-          endpoint: "https://en.wikinews.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikisource",
-          endpoint: "https://en.wikisource.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikibooks",
-          endpoint: "https://en.wikibooks.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikiversity",
-          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikivoyage",
-          endpoint: "https://en.wikivoyage.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikidata",
-          endpoint: "https://www.wikidata.org/api/rest_v1/page/summary/"
-        },
-        {
-          name: "Wikijournal (Wikiversity)",
-          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijournal"
-        },
-        {
-          name: "Wikijunior (Wikiversity)",
-          endpoint: "https://en.wikiversity.org/api/rest_v1/page/summary/Wikijunior"
-        }
-      ];
-
-      function handleSearch(event) {
-        if (event.key === "Enter") {
-          searchWiki();
-        }
-      }
-
-      function searchWiki() {
-        var searchTerm = document.getElementById("searchInput").value;
-        searchTerm = searchTerm.replace(/ /g, "_"); // Replace spaces with underscores
-        var resultsList = document.getElementById("resultsList");
-        resultsList.innerHTML = "";
-
-        sources.forEach(source => {
+      Promise.all(
+        sources.map(source => {
           var url = source.endpoint + encodeURIComponent(searchTerm);
-          fetch(url)
+          return fetch(url)
             .then(response => response.json())
             .then(data => {
               if (data.title) {
@@ -172,31 +225,37 @@
                 resultItem.innerHTML = `
                   <a class="result-title" href="${link}" target="_blank">${title}</a>
                   <p class="result-summary">${formatSummary(summary)}</p>
-                  <p class="result-source">Source: ${source.name}</p>
+                  <p class="result-source">Source: <a href="${source.homepage}" target="_blank">${source.name}</a></p>
                 `;
 
                 resultsList.appendChild(resultItem);
+                hasResults = true;
               }
             })
             .catch(error => {
               console.error(error);
             });
-        });
-      }
-
-      function formatSummary(summary) {
-        var maxLength = 250;
-        var formattedSummary = summary;
-
-        if (formattedSummary.length > maxLength) {
-          formattedSummary = formattedSummary.substring(0, maxLength);
-          var lastSpaceIndex = formattedSummary.lastIndexOf(" ");
-          formattedSummary = formattedSummary.substring(0, lastSpaceIndex);
-          formattedSummary += "...";
+        })
+      ).then(() => {
+        if (!hasResults) {
+          noResultsContainer.style.display = "flex";
         }
+      });
+    }
 
-        return formattedSummary;
+    function formatSummary(summary) {
+      var maxLength = 250;
+      var formattedSummary = summary;
+
+      if (formattedSummary.length > maxLength) {
+        formattedSummary = formattedSummary.substring(0, maxLength);
+        var lastSpaceIndex = formattedSummary.lastIndexOf(" ");
+        formattedSummary = formattedSummary.substring(0, lastSpaceIndex);
+        formattedSummary += "...";
       }
-    </script>
-  </body>
+
+      return formattedSummary;
+    }
+  </script>
+</body>
 </html>
